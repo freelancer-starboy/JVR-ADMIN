@@ -25,6 +25,7 @@
     "@reduxjs/toolkit": "^2.5.1",
     "apexcharts": "^3.36.3",
     "axios": "^1.7.9",
+    "caniuse-lite": "^1.0.30001700",
     "chart.js": "^4.4.7",
     "cloudinary": "^2.5.1",
     "dayjs": "^1.11.7",
@@ -49,6 +50,6 @@
     "swiper": "^8.4.5"
   },
   "devDependencies": {
-    "sass": "^1.57.1"
+    "sass": "^1.85.0"
   }
 }
