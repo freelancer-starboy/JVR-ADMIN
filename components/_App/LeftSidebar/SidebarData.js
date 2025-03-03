@@ -56,8 +56,8 @@ export const SidebarData = [
         path: "/ecommerce/checkout/",
       },
       {
-        title: "Sellers",
-        path: "/ecommerce/sellers/",
+        title: "Enquiries",
+        path: "/ecommerce/email/inbox",
       },
     ],
   }
