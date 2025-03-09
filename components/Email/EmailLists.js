@@ -24,7 +24,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import StarIcon from "@mui/icons-material/Star";
 import Link from "next/link";
-import { getContactList } from "@/utils/contactSlice";
+import { getContactList, updateEmailStatus } from "@/utils/contactSlice";
 
 export default function EmailLists() {
   const dispatch = useDispatch();
@@ -33,7 +33,7 @@ export default function EmailLists() {
     dispatch(getContactList());
   }, [dispatch]);
 
-  const { contacts } = useSelector((state) => state.contacts);
+  const { contacts, error } = useSelector((state) => state.contacts);
 
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
@@ -57,7 +57,9 @@ export default function EmailLists() {
           mb: "20px",
         }}
       >
-        <Typography sx={{ fontSize: 16, fontWeight: 500 }}>Email List</Typography>
+        <Typography sx={{ fontSize: 16, fontWeight: 500 }}>
+          Email List
+        </Typography>
         <Box>
           <Tooltip title="Print">
             <IconButton sx={{ background: "#F2F6F8" }}>
@@ -90,29 +92,49 @@ export default function EmailLists() {
       <TableContainer component={Paper} sx={{ boxShadow: "none" }}>
         <Table sx={{ minWidth: 800 }}>
           <TableBody>
-            {contacts && contacts.contactDetails?.length > 0 && contacts?.contactDetails?.map((contact) => (
-              <TableRow key={contact._id}>
-                <TableCell>
-                  <Checkbox size="small" />
-                </TableCell>
-                <TableCell>
-                  <Checkbox icon={<StarBorderIcon />} checkedIcon={<StarIcon />} />
-                </TableCell>
-                <TableCell sx={{ fontSize: "13px" }}>
-                  <Link href={`/ecommerce/email/read-email/${contact._id}`} className="readEmail">
-                    {contact.name}
-                  </Link>
-                </TableCell>
-                <TableCell sx={{ fontSize: "13px" }}>
-                  <Link href={`/ecommerce/email/read-email/${contact._id}`} className="readEmail">
-                    {contact.subject}
-                  </Link>
-                </TableCell>
-                <TableCell align="right" sx={{ fontSize: "13px" }}>
-                  {contact.createdAt}
-                </TableCell>
-              </TableRow>
-            ))}
+            {error && <p>{error}</p>}
+            {contacts &&
+              contacts.contactDetails?.length > 0 &&
+              contacts?.contactDetails?.map((contact) => (
+                <TableRow key={contact._id}>
+                  <TableCell sx={{ fontSize: "13px" , color: contact.isOpened ? 'gray' : 'black', fontWeight: contact.isOpened ? 'normal' : 'bold'}} >
+                    <Link
+                      href={`/ecommerce/email/read-email/${contact._id}`}
+                      onClick={() => {
+                        dispatch(updateEmailStatus(contact._id));
+                      }}
+                      className="readEmail"
+                    >
+                      {contact.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell sx={{ fontSize: "13px" , color: contact.isOpened ? 'gray' : 'black', fontWeight: contact.isOpened ? 'normal' : 'bold'}}>
+                    <Link
+                      href={`/ecommerce/email/read-email/${contact._id}`}
+                      className="readEmail"
+                      onClick={() => {
+                        dispatch(updateEmailStatus(contact._id));
+                      }}
+                    >
+                      {contact.subject}
+                    </Link>
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontSize: "13px",color: contact.isOpened ? 'gray' : 'black', fontWeight: contact.isOpened ? 'normal' : 'bold' }}>
+                    {contact.createdAt
+                      ? new Date(contact.createdAt).toLocaleString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })
+                      : "No Date Available"}
+                  </TableCell>
+                </TableRow>
+              ))}
+
+            {typeof contacts === "String" && <p>No email found</p>}
           </TableBody>
         </Table>
       </TableContainer>

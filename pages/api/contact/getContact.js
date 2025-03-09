@@ -10,11 +10,15 @@ export default async function handler(req, res){
 
     try {
         await connectDb()
-        const response = await Contact.find({})
+        const response = await Contact.find({}).sort({ createdAt: -1 })
         if(response.length === 0){
-            return res.status(404).json({ message : "Contact Not Found"})
+            return res.status(404).json({ message : "No emails found"})
         }
-        return res.status(200).json({ contactDetails : response })
+        const unreadLength = await Contact.find({ isOpened : false })
+        console.log("Total Contacts:", response.length);
+        console.log("Unread Contacts:", unreadLength);
+
+        return res.status(200).json({ contactDetails : response, unreadLength : unreadLength.length, message: "Contact fetched successfully" })
     } catch (error) {
         return res.status(500).json({ message: error.message })
     }

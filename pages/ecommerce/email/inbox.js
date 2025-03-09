@@ -1,11 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Grid from "@mui/material/Grid";
 import Link from 'next/link';
 import styles from '@/styles/PageTitle.module.css'
 import LeftSidebar from '@/components/Email/LeftSidebar';
 import EmailLists from '@/components/Email/EmailLists';
+import { useDispatch } from 'react-redux';
+import { specificTypeEmail } from '@/utils/contactSlice';
  
 export default function Inbox() {
+  // const dispatch = useDispatch()
+  // useEffect(() => {
+  //   dispatch(specificTypeEmail())
+  // })
   return (
     <>
       {/* Page title */}

@@ -6,6 +6,9 @@ export default async function handler(req, res){
         return res.status(405).json({ message: "Method not allowed" });
     }
 
+    
+
+
     const { id } = req.query;
     const Contact = mongoose.models.Contact || new mongoose.model("Contact", new mongoose.Schema({}));
     try {

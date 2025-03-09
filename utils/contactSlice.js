@@ -13,11 +13,49 @@ export const getContactList = createAsyncThunk(
     }
 )
 
+
+export const updateEmailStatus = createAsyncThunk(
+    "admin/updateEmailStatus",
+    async (id, thunkApi) => {
+        try {
+            const response = await axios.put(`/api/contact/changeStatus/${id}`)
+            return response.data
+        } catch (error) {
+            return thunkApi.rejectWithValue(error.response?.data?.message || "Something went wrong")
+    }}
+)
+
+export const specificTypeEmail = createAsyncThunk(
+    "admin/specificTypeEmail",
+    async ( _, thunkApi) => {
+        try {
+            const response = await axios.get(`/api/contact/unread`)
+            return response.data
+        } catch (error) {
+            return thunkApi.rejectWithValue(error.response?.data?.message || "Something went wrong")
+        }
+    }
+)
+
 export const getSpecificContact = createAsyncThunk(
     "admin/getSpecificContact",
     async (id, thunkApi) => {
         try {
             const response = await axios.get(`/api/contact/${id}`)
+            return response.data
+        } catch (error) {
+            return thunkApi.rejectWithValue(error.response?.data?.message || "Something went wrong")
+        }
+    }
+)
+
+export const replyEmail = createAsyncThunk(
+    "admin/replyEmail",
+    async (data, thunkApi) => {
+        try {
+            const response = await axios.post("/api/contact/replyEmail",data, { headers : {
+                "Content-Type" : "application/json"
+            }} )
             return response.data
         } catch (error) {
             return thunkApi.rejectWithValue(error.response?.data?.message || "Something went wrong")
@@ -31,6 +69,7 @@ const contactSlice = createSlice({
         contacts : [],
         loading : false,
         error : null,
+        unread : 0
     },
     reducers : {},
     extraReducers : (builder) => {
@@ -42,6 +81,8 @@ const contactSlice = createSlice({
             .addCase(getContactList.fulfilled, (state, action) => {
                 state.loading = false;
                 state.contacts = action.payload;
+                state.totalEmails = action.payload.contactDetails.length;
+                state.unread = action.payload.unreadLength
                 state.error = null;
             })
             .addCase(getContactList.rejected, (state, action) => {
@@ -59,6 +100,20 @@ const contactSlice = createSlice({
                 state.error = null;
             })
             .addCase(getSpecificContact.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+                state.contacts = [];
+            })
+            .addCase(specificTypeEmail.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(specificTypeEmail.fulfilled, (state, action) => {
+                state.loading = false;
+                state.contacts = action.payload;
+                state.error = null;
+            })
+            .addCase(specificTypeEmail.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
                 state.contacts = [];

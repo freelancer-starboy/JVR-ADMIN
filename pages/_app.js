@@ -21,6 +21,7 @@ import { ThemeProvider, CssBaseline } from "@mui/material";
 import Layout from "@/components/_App/Layout";
 import { Provider } from 'react-redux';
 import { store } from '@/utils/store';
+import { ToastContainer } from 'react-toastify';
 
 function MyApp({ Component, pageProps }) {
   return (
@@ -31,6 +32,7 @@ function MyApp({ Component, pageProps }) {
           <Provider store={store}>
 
           <Component {...pageProps} />
+          <ToastContainer />
           </Provider>
         </Layout>
       </ThemeProvider>
