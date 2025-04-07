@@ -59,7 +59,7 @@ export default function Products() {
       {/* Image Container */}
       <div style={{ width: "100%", height: "300px", display: "flex", justifyContent: "center", alignItems: "center" }}>
         <img
-          src={product.productVariants[0].images[0]}
+          src={product.productVariants?.[0].images[0]}
           alt={product.productName}
           style={{
             width: "80%",

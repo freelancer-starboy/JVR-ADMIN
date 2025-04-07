@@ -53,8 +53,14 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 
 export default function SearchForm({ setSearchQuery, searchQuery}) {
   const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value); // Make sure it's not invoked immediately
-  };
+    let value = event.target.value;
+
+    if (value.startsWith("#-JVR-")) {
+        value = encodeURIComponent(value);
+    }
+
+    setSearchQuery(value);
+};
   return (
     <>
       <Search className="search-form">

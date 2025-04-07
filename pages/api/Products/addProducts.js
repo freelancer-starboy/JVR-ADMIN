@@ -103,11 +103,13 @@ try {
     };
 
     const newProduct = new Product(productData);
-    await newProduct.save();
+    const savedProduct = await newProduct.save();
+
+    const fullProduct = await Product.findById(savedProduct._id);
 
     return res.status(201).json({ 
         message: "Product added successfully", 
-        product: newProduct 
+        product: fullProduct 
     });
 
 } catch (error) {

@@ -32,26 +32,27 @@ export default async function handler(req, res){
         }
 
         // 4. Try the update with explicit ObjectId
-        const updateResult = await Orders.updateOne(
+        const updateResult = await Orders.findOneAndUpdate(
             { _id: id },
             { 
                 $set: { 
                     orderStatus: status,
-                    updatedAt: new Date() 
+                    updatedAt: new Date()
                 } 
             },
-            { strict: false } // This will allow updates even if fields aren't in schema
+            { new : true, strict: false } // This will allow updates even if fields aren't in schema
         );
 
-        console.log("Update result:", updateResult);
 
-        if (updateResult.acknowledged) {
+        if (updateResult) {
+            console.log("Success")
             const updatedOrder = await Orders.findById(id);
             return res.status(201).json({ 
                 order: updatedOrder, 
                 message: "Order status updated successfully" 
             });
         } else {
+            console.log("failed")
             return res.status(400).json({ 
                 message: "Update not acknowledged by database",
                 details: updateResult
