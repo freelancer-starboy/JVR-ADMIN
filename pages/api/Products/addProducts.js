@@ -10,6 +10,7 @@ export const config = {
   },
 };
 
+
 cloudinary.config({
   cloud_name: "drojxcxa1",
   api_key: "316898787323286",
