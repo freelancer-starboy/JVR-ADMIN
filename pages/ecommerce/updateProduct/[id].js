@@ -1,34 +1,124 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import styles from "../../styles/CreateProduct.module.scss";
+import styles from "../../../styles/CreateProduct.module.scss";
+import { useRouter } from "next/router";
+import { useGetProductByIdMutation, useUpdateProductMutation } from "@/utils/api/ProductsApi";
 
 const RichTextEditor = dynamic(() => import("@mantine/rte"), { ssr: false });
 
 const UpdateProduct = () => {
+  const router = useRouter();
+  const { id } = router.query;
+  const [getProduct, { isLoading, isError, error }] = useGetProductByIdMutation();
+  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
+  
   const [formData, setFormData] = useState({
     name: "",
     type: "",
     category: "",
     price: "",
     discountPrice: "",
-    description: "",
+    brand: "",
+    description: [""],
   });
 
   const [variants, setVariants] = useState([
     {
       color: "",
       sizes: [{ size: "", stock: 0 }],
-      images: [], // Array to store variant images
-      imageFiles: [], // Array to store image files for preview
+      images: [],
+      imageFiles: [],
     },
   ]);
+
+  const [imagesToRemove, setImagesToRemove] = useState([]);
+
+  // Fetch product details
+  useEffect(() => {
+    if (!id) return;
+
+    const getProductById = async () => {
+      try {
+        const response = await getProduct({ productId: id }).unwrap();
+        const product = response.product;
+        
+        // Normalize category name (backend uses lowercase, frontend uses capitalized)
+        const normalizeCategory = (cat) => {
+          if (!cat) return "";
+          const lowerCat = cat.toLowerCase();
+          if (lowerCat === "mens") return "Mens";
+          if (lowerCat === "women") return "Women";
+          if (lowerCat === "kids") return "Kids";
+          return cat;
+        };
+
+        // Normalize type name
+        const normalizeType = (type) => {
+          if (!type) return "";
+          const lowerType = type.toLowerCase();
+          if (lowerType === "shirt" || lowerType === "shirts") return "Shirts";
+          if (lowerType === "pant" || lowerType === "pants") return "Pants";
+          if (lowerType === "tshirt" || lowerType === "tshirts") return "Tshirts";
+          if (lowerType === "kurta") return "Kurta";
+          if (lowerType === "saree") return "Saree";
+          if (lowerType === "leggins" || lowerType === "leggings") return "Leggins";
+          if (lowerType === "set") return "set";
+          return type;
+        };
+        
+        // Update form data
+        setFormData({
+          name: product.productName || "",
+          type: normalizeType(product.productType),
+          category: normalizeCategory(product.productCategory),
+          price: product.productOldPrice || "",
+          discountPrice: product.productPrice || "",
+          brand: product.productBrand || "",
+          description: Array.isArray(product.productDetails) 
+            ? product.productDetails 
+            : [product.productDetails || ""],
+        });
+
+        // Update variants if they exist in the product
+        if (product.productVariants && product.productVariants.length > 0) {
+          const mappedVariants = product.productVariants.map(variant => ({
+            color: variant.color || "",
+            sizes: variant.sizes && variant.sizes.length > 0 
+              ? variant.sizes.map(s => ({ 
+                  size: s.size || "", 
+                  stock: Number(s.stock) || 0 
+                }))
+              : [{ size: "", stock: 0 }],
+            images: [],
+            imageFiles: [],
+            existingImages: variant.images || [], // Track existing images separately
+          }));
+          setVariants(mappedVariants);
+        }
+      } catch (error) {
+        if (error.status === 404) {
+          alert("Product not found!");
+        } else if (error.status === 400) {
+          alert("Invalid Product ID!");
+        } else {
+          alert("Something went wrong while fetching product.");
+        }
+      }
+    };
+
+    getProductById();
+  }, [id, getProduct]);
 
   // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
       variants.forEach((variant) => {
-        variant.images.forEach((url) => URL.revokeObjectURL(url));
+        variant.images.forEach((url) => {
+          if (url.startsWith('blob:')) {
+            URL.revokeObjectURL(url);
+          }
+        });
       });
     };
   }, []);
@@ -60,12 +150,50 @@ const UpdateProduct = () => {
     setVariants(newVariants);
   };
 
+  // Remove existing image
+  const removeExistingImage = (variantIndex, imageIndex) => {
+    const newVariants = [...variants];
+    const imageUrl = newVariants[variantIndex].existingImages[imageIndex];
+    
+    // Add to images to remove list
+    setImagesToRemove(prev => [...prev, imageUrl]);
+    
+    // Remove from existing images
+    newVariants[variantIndex].existingImages = newVariants[variantIndex].existingImages.filter(
+      (_, idx) => idx !== imageIndex
+    );
+    
+    setVariants(newVariants);
+  };
+
+  // Remove new image preview
+  const removeNewImage = (variantIndex, imageIndex) => {
+    const newVariants = [...variants];
+    
+    // Revoke the blob URL
+    URL.revokeObjectURL(newVariants[variantIndex].images[imageIndex]);
+    
+    // Remove from preview images
+    newVariants[variantIndex].images = newVariants[variantIndex].images.filter(
+      (_, idx) => idx !== imageIndex
+    );
+    
+    // Remove from image files
+    newVariants[variantIndex].imageFiles = Array.from(newVariants[variantIndex].imageFiles).filter(
+      (_, idx) => idx !== imageIndex
+    );
+    
+    setVariants(newVariants);
+  };
+
   // Handle size changes within variants
   const handleSizeChange = (variantIndex, sizeIndex, field, value) => {
     const newVariants = [...variants];
     newVariants[variantIndex].sizes[sizeIndex][field] = value;
     setVariants(newVariants);
   };
+
+
 
   // Add/remove variants and sizes
   const addSize = (variantIndex) => {
@@ -88,13 +216,22 @@ const UpdateProduct = () => {
         sizes: [{ size: "", stock: 0 }],
         images: [],
         imageFiles: [],
+        existingImages: [],
       },
     ]);
   };
 
   const removeVariant = (index) => {
     // Clean up object URLs before removing variant
-    variants[index].images.forEach((url) => URL.revokeObjectURL(url));
+    variants[index].images.forEach((url) => {
+      if (url.startsWith('blob:')) {
+        URL.revokeObjectURL(url);
+      }
+    });
+    // Add all existing images of this variant to removal list
+    if (variants[index].existingImages) {
+      setImagesToRemove(prev => [...prev, ...variants[index].existingImages]);
+    }
     setVariants(variants.filter((_, i) => i !== index));
   };
 
@@ -138,7 +275,8 @@ const UpdateProduct = () => {
         alert("All variants must have color and size specified");
         return false;
       }
-      if (variant.imageFiles.length === 0) {
+      // Check if variant has either existing images or new image files
+      if (!variant.existingImages?.length && !variant.imageFiles?.length) {
         alert("Each variant must have at least one image");
         return false;
       }
@@ -153,50 +291,61 @@ const UpdateProduct = () => {
     if (!validateForm()) return;
 
     try {
-      // Upload variant images and create final variant data
-      const finalVariants = await Promise.all(
-        variants.map(async (variant) => {
-          const uploadedVariantImages = await uploadImagesToCloudinary(
-            variant.imageFiles
-          );
-          return {
-            ...variant,
-            images: uploadedVariantImages,
-            imageFiles: undefined, // Remove the files from the final data
-          };
-        })
-      );
-
-      const productData = {
-        ...formData,
-        variants: finalVariants,
-      };
-
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(productData),
+      // Create FormData for multipart upload
+      const formDataToSend = new FormData();
+      
+      // Add basic fields
+      formDataToSend.append('productName', formData.name);
+      formDataToSend.append('productCategory', formData.category.toLowerCase());
+      formDataToSend.append('productType', formData.type.toLowerCase());
+      formDataToSend.append('productOldPrice', formData.price);
+      formDataToSend.append('productPrice', formData.discountPrice);
+      formDataToSend.append('productBrand', formData.brand || 'Generic');
+      formDataToSend.append('productDetails', JSON.stringify(formData.description));
+      formDataToSend.append('productId', id);
+      
+      // Add images to remove
+      formDataToSend.append('imagesToRemove', JSON.stringify(imagesToRemove));
+      
+      // Prepare variants data
+      const variantsForSubmit = variants.map((variant) => ({
+        color: variant.color,
+        sizes: variant.sizes,
+        existingImages: variant.existingImages || [],
+      }));
+      
+      formDataToSend.append('productVariants', JSON.stringify(variantsForSubmit));
+      
+      // Add variant images
+      variants.forEach((variant, index) => {
+        if (variant.imageFiles && variant.imageFiles.length > 0) {
+          variant.imageFiles.forEach((file) => {
+            formDataToSend.append(`variantImages_${index}`, file);
+          });
+        }
       });
 
-      if (response.ok) {
-        alert("Product created successfully!");
-      } else {
-        throw new Error("Error creating product");
-      }
+      const response = await updateProduct(formDataToSend).unwrap();
+
+      alert(response.message || "Product updated successfully!");
+      // router.push("/products"); // Redirect to products list
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Error creating product: " + error.message);
+      alert("Error updating product: " + (error?.data?.message || error.message));
     }
   };
+
+  if (isLoading) return <p>Loading product details...</p>;
+  if (isError) return <p>Error: {error?.data?.message || error?.error}</p>;
 
   return (
     <div className={styles["product-creation"]}>
       <div className={styles["page-header"]}>
-        <h1>Update Products</h1>
+        <h1>Update Product</h1>
         <nav className={styles.breadcrumb}>
           <Link href="/">Dashboard</Link>
           <span>/</span>
-          <span>Update Products</span>
+          <span>Update Product</span>
         </nav>
       </div>
 
@@ -216,8 +365,7 @@ const UpdateProduct = () => {
             </div>
 
             <div className={styles["form-group"]}>
-              <label>Product category</label>
-
+              <label>Product Category</label>
               <select
                 name="category"
                 value={formData.category}
@@ -233,7 +381,6 @@ const UpdateProduct = () => {
 
             <div className={styles["form-group"]}>
               <label>Product Type</label>
-              {/* Conditional Rendering for Product Type */}
               {formData.category === "Mens" || formData.category === "Women" ? (
                 <select
                   name="type"
@@ -257,12 +404,14 @@ const UpdateProduct = () => {
                       )}
                 </select>
               ) : (
-                <select>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  required
+                >
                   <option value="">Select a Type</option>
                   <option value="set">set</option>
-                  {/* <option value="1 To 2 year">1 To 2 year</option>  
-                <option value="2 To 3 year">2 To 3 year</option>
-                <option value="3 To 4 year">3 To 4 year</option> */}
                 </select>
               )}
             </div>
@@ -291,6 +440,18 @@ const UpdateProduct = () => {
                   min="0"
                 />
               </div>
+            </div>
+
+            <div className={styles["form-group"]}>
+              <label>Product Brand</label>
+              <input
+                type="text"
+                name="brand"
+                value={formData.brand}
+                onChange={handleChange}
+                placeholder="Enter product brand"
+                required
+              />
             </div>
 
             <div className={styles["variants-section"]}>
@@ -336,21 +497,88 @@ const UpdateProduct = () => {
                       onChange={(e) =>
                         handleVariantImageChange(variantIndex, e)
                       }
-                      required={variant.images.length === 0}
                       className={styles["button"]}
                     />
+                    
+                    {/* Display existing images */}
+                    {variant.existingImages && variant.existingImages.length > 0 && (
+                      <div className={styles["image-preview"]}>
+                        <p>Existing Images:</p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                          {variant.existingImages.map((url, imgIndex) => (
+                            <div key={`existing-${imgIndex}`} style={{ position: 'relative' }}>
+                              <img
+                                src={url}
+                                alt={`Existing variant ${variantIndex + 1} image ${imgIndex + 1}`}
+                                className={styles["preview-image"]}
+                                style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeExistingImage(variantIndex, imgIndex)}
+                                style={{
+                                  position: 'absolute',
+                                  top: '-5px',
+                                  right: '-5px',
+                                  background: 'red',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '25px',
+                                  height: '25px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Display new image previews */}
                     {variant.images.length > 0 && (
                       <div className={styles["image-preview"]}>
-                        {variant.images.map((url, imgIndex) => (
-                          <img
-                            key={imgIndex}
-                            src={url}
-                            alt={`Variant ${variantIndex + 1} preview ${
-                              imgIndex + 1
-                            }`}
-                            className={styles["preview-image"]}
-                          />
-                        ))}
+                        <p>New Images:</p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                          {variant.images.map((url, imgIndex) => (
+                            <div key={`new-${imgIndex}`} style={{ position: 'relative' }}>
+                              <img
+                                src={url}
+                                alt={`New variant ${variantIndex + 1} preview ${imgIndex + 1}`}
+                                className={styles["preview-image"]}
+                                style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeNewImage(variantIndex, imgIndex)}
+                                style={{
+                                  position: 'absolute',
+                                  top: '-5px',
+                                  right: '-5px',
+                                  background: 'red',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '25px',
+                                  height: '25px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -359,8 +587,6 @@ const UpdateProduct = () => {
                     <h5>Sizes</h5>
                     {variant.sizes.map((size, sizeIndex) => (
                       <div key={sizeIndex} className={styles["size-row"]}>
-                        {/* Conditional Rendering for Shirt and Pants Sizes */}
-
                         <select
                           value={size.size}
                           onChange={(e) =>
@@ -455,9 +681,12 @@ const UpdateProduct = () => {
             <div className={styles["form-group"]}>
               <label>Description</label>
               <RichTextEditor
-                value={formData.description}
+                value={formData.description[0] || ""}
                 onChange={(value) =>
-                  handleChange({ target: { name: "description", value } })
+                  setFormData(prev => ({
+                    ...prev,
+                    description: [value]
+                  }))
                 }
               />
             </div>
@@ -466,8 +695,9 @@ const UpdateProduct = () => {
               <button
                 type="submit"
                 className={`${styles.btn} ${styles["btn-primary"]} ${styles["submit-btn"]}`}
+                disabled={isUpdating}
               >
-                Update Products
+                {isUpdating ? "Updating..." : "Update Product"}
               </button>
             </div>
           </form>

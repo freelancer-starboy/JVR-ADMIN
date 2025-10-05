@@ -29,10 +29,10 @@ export const SidebarData = [
         title: "Products",
         path: "/ecommerce/products/",
       },
-      {
-        title: "Product Details",
-        path: "/ecommerce/product-details/",
-      },
+      // {
+      //   title: "Product Details",
+      //   path: "/ecommerce/product-details/",
+      // },
       {
         title: "Add Products",
         path: "/ecommerce/Add-Products/",
@@ -51,10 +51,10 @@ export const SidebarData = [
         path: "/ecommerce/customers/",
       },
       
-      {
-        title: "Checkout",
-        path: "/ecommerce/checkout/",
-      },
+      // {
+      //   title: "Checkout",
+      //   path: "/ecommerce/checkout/",
+      // },
       {
         title: "Enquiries",
         path: "/ecommerce/email/inbox",

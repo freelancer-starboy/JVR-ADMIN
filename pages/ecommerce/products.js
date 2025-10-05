@@ -7,14 +7,6 @@ import { Typography } from "@mui/material";
 import Button from "@mui/material/Button";
 import Link from 'next/link';
 import styles from '@/styles/PageTitle.module.css';
-
-import pro1 from "@/public/images/product1.png";
-import pro2 from "@/public/images/product2.png";
-import pro3 from "@/public/images/product3.png";
-import pro4 from "@/public/images/product4.png";
-import pro5 from "@/public/images/product5.png";
-import pro6 from "@/public/images/product6.png";
-import pro7 from "@/public/images/product7.png";
 import { useGetAllProductsQuery } from "@/utils/api/ProductsApi";
 import Preloader from "@/components/Loader/PreLoader";
 
@@ -22,8 +14,12 @@ import Preloader from "@/components/Loader/PreLoader";
 export default function Products() {
   const router = useRouter();
 
-  const handleUpdateClick = () => {
-    router.push(`/ecommerce/Update-Products`);
+  const handleUpdateClick = (id) => {
+    router.push(`/ecommerce/updateProduct/${id}`);
+  };
+
+    const handleDetailedViewClick = (id) => {
+    router.push(`/ecommerce/productDetails/${id}`);
   };
   const { data : products, isLoading } = useGetAllProductsQuery();
 
@@ -57,12 +53,13 @@ export default function Products() {
       }}
     >
       {/* Image Container */}
-      <div style={{ width: "100%", height: "300px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+      <div onClick={() => handleDetailedViewClick(product._id)} style={{ width: "100%", height: "300px", display: "flex", justifyContent: "center", alignItems: "center" }}>
         <img
-          src={product.productVariants?.[0].images[0]}
+          src={product.productVariants?.[0]?.images[0]}
           alt={product.productName}
           style={{
             width: "80%",
+            cursor : "pointer",
             height: "100%",
             borderRadius: "10px",
             objectFit: "cover", // Ensures images fill the container properly
@@ -103,7 +100,8 @@ export default function Products() {
             padding: "12px 20px",
             color: "#fff !important",
           }}
-          onClick={() => handleUpdateClick(product.name)}
+          onClick={() => handleUpdateClick(product._id)}
+          
         >
           Update
         </Button>

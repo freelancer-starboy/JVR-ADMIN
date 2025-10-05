@@ -1,23 +1,84 @@
 import React from 'react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
-const ProductDescription = () => {
+const ProductDescription = ({ productData }) => {
+  const product = productData || {};
+  const hasDescription = product.description && product.description.length > 0;
+
   return (
     <>
       <div className='product-description'>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        {/* Main Description */}
+         <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+              Product Description
+            </Typography>
+        {hasDescription ? (
+          <Box 
+            dangerouslySetInnerHTML={{ __html: product.description[0] }}
+            sx={{ mb: 2 }}
+          />
+        ) : (
+          <p>No detailed description available for this product.</p>
+        )}
 
-        <ul>
-          <li>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</li>
-            
-          <li>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</li>
-        </ul>
+        {/* Product Specifications */}
+        {product.type || product.category || product.brand ? (
+          <Box sx={{ mt: 3, mb: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+              Product Specifications
+            </Typography>
+            <ul>
+              {product.brand && (
+                <li><strong>Brand:</strong> {product.brand}</li>
+              )}
+              {product.category && (
+                <li><strong>Category:</strong> {product.category}</li>
+              )}
+              {product.type && (
+                <li><strong>Type:</strong> {product.type}</li>
+              )}
+            </ul>
+          </Box>
+        ) : null}
 
-        <p>At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio.</p>
+        {/* Additional Information - You can customize this based on your needs */}
+        {/* <Box sx={{ mt: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            Additional Information
+          </Typography>
+          <ul>
+            <li>High-quality materials ensuring durability and comfort</li>
+            <li>Carefully crafted with attention to detail</li>
+            <li>Easy to care for and maintain</li>
+            <li>Perfect for various occasions and styles</li>
+          </ul>
+        </Box> */}
 
-        <p>On the other hand, we denounce with righteous indignation and dislike men who are so beguiled and demoralized by the charms of pleasure of the moment, so blinded by desire, that they cannot foresee the pain and trouble that are bound to ensue; and equal blame belongs to those who fail in their duty through weakness of will, which is the same as saying through shrinking from toil and pain.</p>
+        {/* Care Instructions */}
+        {/* <Box sx={{ mt: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            Care Instructions
+          </Typography>
+          <ul>
+            <li>Follow the care label instructions for best results</li>
+            <li>Machine wash or hand wash as recommended</li>
+            <li>Avoid using harsh detergents or bleach</li>
+            <li>Dry according to fabric requirements</li>
+          </ul>
+        </Box> */}
+
+        {/* Return Policy */}
+        {/* <Box sx={{ mt: 3 }}>
+          <Typography variant="body2" color="text.secondary">
+            <strong>Return Policy:</strong> We offer a hassle-free return policy. 
+            If you're not satisfied with your purchase, you can return it within 
+            the specified period as per our return policy guidelines.
+          </Typography>
+        </Box> */}
       </div>
     </>
-  )
+  );
 }
 
 export default ProductDescription;
