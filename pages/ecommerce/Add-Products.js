@@ -186,15 +186,15 @@ const CreateProduct = () => {
                 required
               >
                 <option value="">Select a category</option>
-                <option value="Mens">Mens</option>
-                <option value="Women">Women</option>
-                <option value="Kids">Kids</option>
+                <option value="mens">Mens</option>
+                <option value="women">Women</option>
+                <option value="kids">Kids</option>
               </select>
             </div>
 
             <div className={styles["form-group"]}>
               <label>Product Type</label>
-              {formData.productCategory === "Mens" || formData.productCategory === "Women" ? (
+              {formData.productCategory === "mens" || formData.productCategory === "women" ? (
                 <select
                   name="productType"
                   value={formData.productType}
@@ -202,7 +202,7 @@ const CreateProduct = () => {
                   required
                 >
                   <option value="">Select a Type</option>
-                  {formData.productCategory === "Mens"
+                  {formData.productCategory === "mens"
                     ? ["Shirts", "Pants", "Tshirts"].map((menstype) => (
                         <option key={menstype} value={menstype}>
                           {menstype}

@@ -93,7 +93,7 @@ export default async function handler(req, res) {
       productName: String(getFieldValue(fields.productName)).trim(),
       productPrice: Number(getFieldValue(fields.productPrice)) || 0,
       productOldPrice: Number(getFieldValue(fields.productOldPrice)) || 0,
-      productCategory: capitalize(String(getFieldValue(fields.productCategory)).trim()),
+      productCategory: String(getFieldValue(fields.productCategory)).trim(),
       productType: capitalize(String(getFieldValue(fields.productType)).trim()),
       productBrand: String(getFieldValue(fields.productBrand)).trim(),
       productDetails: JSON.parse(getFieldValue(fields.productDetails) || '[]')
