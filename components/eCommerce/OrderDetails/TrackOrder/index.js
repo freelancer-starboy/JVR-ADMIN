@@ -14,6 +14,7 @@ import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import SettingsIcon from '@mui/icons-material/Settings';
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const StyledCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -100,13 +101,13 @@ const TrackOrder = ({ trackOrders }) => {
     try {
       const response = await axios.put(`/api/Orders/updateStatus?id=${trackOrders?._id}&status=${newStatus}`);
       if (response.status === 201) {
-        alert(`Order status updated to ${newStatus}`);
+        toast.success(`Order status updated to ${newStatus}`);
         // Reload the page to update the values
         window.location.reload();
       }
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("Failed to update order status");
+      toast.error("Failed to update order status");
     }
   };
 
