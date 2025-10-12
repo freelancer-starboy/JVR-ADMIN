@@ -3,6 +3,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import styles from "../../styles/CreateProduct.module.scss";
 import { useAddProductsMutation } from "@/utils/api/ProductsApi";
+import { toast } from "react-toastify";
 
 const RichTextEditor = dynamic(() => import("@mantine/rte"), { ssr: false });
 
@@ -126,7 +127,7 @@ const CreateProduct = () => {
 
     try {
         const response = await addProduct(formDataToSend).unwrap();
-        alert("Product added successfully!");
+        toast.success("Product added successfully!");
         
         // Reset form
         setFormData({
@@ -146,7 +147,7 @@ const CreateProduct = () => {
         }]);
     } catch (err) {
         console.error("Error details:", err);
-        alert("Error adding product: " + (err.data?.message || "Unknown error"));
+        toast.error("Error adding product: " + (err.data?.message || "Unknown error"));
     }
 };
 
@@ -284,19 +285,72 @@ const CreateProduct = () => {
                     )}
                   </div>
 
-                  <div className={styles["form-group"]}>
-                    <label>Color</label>
-                    <input
-                      type="text"
-                      value={variant.color}
-                      onChange={(e) =>
-                        handleVariantChange(variantIndex, "color", e.target.value)
-                      }
-                      placeholder="Enter color"
-                      required
-                    />
-                  </div>
-
+                 <div className={styles["form-group"]}>
+  <label>Color</label>
+  <div style={{ 
+    display: 'grid',
+    gridTemplateColumns: 'auto 1fr',
+    gap: '12px',
+    alignItems: 'start'
+  }}>
+    {/* Color Picker */}
+    <div style={{ textAlign: 'center' }}>
+      <input
+        type="color"
+        value={variant.color || '#000000'}
+        onChange={(e) =>
+          handleVariantChange(variantIndex, "color", e.target.value)
+        }
+        style={{
+          width: '60px',
+          height: '60px',
+          border: '2px solid #ddd',
+          borderRadius: '8px',
+          cursor: 'pointer'
+        }}
+        required
+      />
+      <div style={{
+        marginTop: '6px',
+        padding: '4px 8px',
+        backgroundColor: variant.color || '#000000',
+        color: '#fff',
+        fontSize: '10px',
+        borderRadius: '4px',
+        textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
+      }}>
+        Preview
+      </div>
+    </div>
+    
+    {/* Hex Input */}
+    <div>
+      <input
+        type="text"
+        value={variant.color || ''}
+        onChange={(e) => {
+          let value = e.target.value.toUpperCase();
+          if (value && !value.startsWith('#')) {
+            value = '#' + value;
+          }
+          if (/^#[0-9A-F]{0,6}$/.test(value) || value === '') {
+            handleVariantChange(variantIndex, "color", value);
+          }
+        }}
+        placeholder="#000000"
+        maxLength={7}
+        style={{
+          width: '100%',
+          padding: '10px'
+        }}
+        required
+      />
+      <small style={{ color: '#666', fontSize: '12px' }}>
+        Click the color box or enter hex code
+      </small>
+    </div>
+  </div>
+</div>
                   <div className={styles["forms-group"]}>
                     <label>Variant Images</label>
                     <input

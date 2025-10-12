@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import styles from "../../../styles/CreateProduct.module.scss";
 import { useRouter } from "next/router";
 import { useGetProductByIdMutation, useUpdateProductMutation } from "@/utils/api/ProductsApi";
+import { toast } from "react-toastify";
 
 const RichTextEditor = dynamic(() => import("@mantine/rte"), { ssr: false });
 
@@ -98,11 +99,11 @@ const UpdateProduct = () => {
         }
       } catch (error) {
         if (error.status === 404) {
-          alert("Product not found!");
+          toast.error("Product not found!");
         } else if (error.status === 400) {
-          alert("Invalid Product ID!");
+          toast.error("Invalid Product ID!");
         } else {
-          alert("Something went wrong while fetching product.");
+          toast.error("Something went wrong while fetching product.");
         }
       }
     };
@@ -266,18 +267,18 @@ const UpdateProduct = () => {
   // Form validation
   const validateForm = () => {
     if (!formData.name || !formData.price) {
-      alert("Name and price are required");
+      toast.error("Name and price are required");
       return false;
     }
 
     for (const variant of variants) {
       if (!variant.color || variant.sizes.some((s) => !s.size)) {
-        alert("All variants must have color and size specified");
+        toast.error("All variants must have color and size specified");
         return false;
       }
       // Check if variant has either existing images or new image files
       if (!variant.existingImages?.length && !variant.imageFiles?.length) {
-        alert("Each variant must have at least one image");
+        toast.error("Each variant must have at least one image");
         return false;
       }
     }
@@ -327,11 +328,11 @@ const UpdateProduct = () => {
 
       const response = await updateProduct(formDataToSend).unwrap();
 
-      alert(response.message || "Product updated successfully!");
+      toast.success(response.message || "Product updated successfully!");
       // router.push("/products"); // Redirect to products list
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Error updating product: " + (error?.data?.message || error.message));
+      toast.error("Error updating product: " + (error?.data?.message || error.message));
     }
   };
 

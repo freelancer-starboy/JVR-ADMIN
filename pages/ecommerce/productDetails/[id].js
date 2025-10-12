@@ -4,6 +4,7 @@ import Link from "next/link";
 import styles from "@/styles/PageTitle.module.css";
 import { useGetProductByIdMutation } from "@/utils/api/ProductsApi";
 import { useRouter } from "next/router";
+import { toast } from "react-toastify";
 
 export default function ProductDetails() {
   const [getProduct, { isLoading, isError, error }] =
@@ -112,11 +113,11 @@ export default function ProductDetails() {
         }
       } catch (error) {
         if (error.status === 404) {
-          alert("Product not found!");
+          toast.error("Product not found!");
         } else if (error.status === 400) {
-          alert("Invalid Product ID!");
+          toast.error("Invalid Product ID!");
         } else {
-          alert("Something went wrong while fetching product.");
+          toast.error("Something went wrong while fetching product.");
         }
       }
     };
