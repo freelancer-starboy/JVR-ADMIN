@@ -35,6 +35,7 @@ import StatusChip, { LEAD_STATUS } from "@/components/common/StatusChip";
 import ColorSwatch from "@/components/common/ColorSwatch";
 import ProductThumb from "@/components/common/ProductThumb";
 import { EmptyState, ErrorState } from "@/components/common/States";
+import { MobileList, MobileRow, desktopOnly } from "@/components/common/MobileList";
 import LeadAvatar from "@/components/leads/LeadAvatar";
 import { errorMessage } from "@/utils/api/baseApi";
 import { useGetLeadQuery, useUpdateLeadMutation } from "@/utils/api/LeadsApi";
@@ -81,7 +82,50 @@ function EnquiryCard({ enquiry, number }) {
           )}
         </Stack>
       </Stack>
-      <TableContainer>
+      {/* Phones: one compact line per product instead of the wide table */}
+      <MobileList>
+        {items.length === 0 ? (
+          <MobileRow>
+            <Typography variant="body2" color="text.secondary">
+              No products recorded for this enquiry.
+            </Typography>
+          </MobileRow>
+        ) : (
+          items.map((item, index) => {
+            const quantity = Number(item.quantity) || 1;
+            return (
+              <MobileRow key={`${item.productId}-${item.color}-${item.size}-${index}`}>
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <ProductThumb src={item.productImage} alt={item.productName} size={48} />
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant="body2" fontWeight={600} noWrap>
+                      {item.productId ? (
+                        <MuiLink href={`/products/${item.productId}`} underline="hover" color="inherit">
+                          {item.productName || "Product"}
+                        </MuiLink>
+                      ) : (
+                        item.productName || "Product"
+                      )}
+                    </Typography>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.25 }} flexWrap="wrap" useFlexGap>
+                      {item.color && <ColorSwatch color={item.color} size={12} showLabel />}
+                      <Typography variant="caption" color="text.secondary">
+                        {[item.size && `Size ${item.size}`, `Qty ${quantity}`].filter(Boolean).join(" · ")}
+                        {item.price != null ? ` · ${formatCurrency(item.price)} each` : ""}
+                      </Typography>
+                    </Stack>
+                  </Box>
+                  <Typography variant="body2" fontWeight={700}>
+                    {item.price != null ? formatCurrency((Number(item.price) || 0) * quantity) : "—"}
+                  </Typography>
+                </Stack>
+              </MobileRow>
+            );
+          })
+        )}
+      </MobileList>
+
+      <TableContainer sx={desktopOnly}>
         <Table size="small" sx={{ minWidth: 560 }}>
           <TableHead>
             <TableRow>
