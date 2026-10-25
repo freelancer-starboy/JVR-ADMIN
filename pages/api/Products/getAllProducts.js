@@ -1,21 +1,15 @@
 import connectDb from "lib/database/db";
-import mongoose from "mongoose";
+import Product from "lib/Models/AddProduct";
+import { rejectMethod, sendError } from "lib/http";
 
-export default async function handler(req, res){
-    if( req.method !== "GET"){
-        return res.status(405).json({ message: "Method not allowed" });
-    }
-    const Product = mongoose.models.Product || new mongoose.model("Product", new mongoose.Schema({}));
+export default async function handler(req, res) {
+  if (rejectMethod(req, res, ["GET"])) return;
 
-    try {
-        await connectDb()
-
-        const response = await Product.find({})
-        if(response.length === 0){
-            return res.status(404).json({ message : "Products Not Found"})
-        }
-        return res.status(200).json({ products: response, message: "Products fetched successfully" })
-    } catch (error) {
-        return res.status(500).json({ message: error.message })
-    }
+  try {
+    await connectDb();
+    const products = await Product.find({}).sort({ _id: -1 }).lean();
+    return res.status(200).json({ products, message: "Products fetched successfully" });
+  } catch (error) {
+    return sendError(res, error, "Failed to load products");
+  }
 }

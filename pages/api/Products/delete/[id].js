@@ -1,40 +1,36 @@
-import connectDb from 'lib/database/db';
-import Product from 'lib/Models/AddProduct';
-import Review from 'lib/Models/reviewModel';
+import connectDb from "lib/database/db";
+import Product from "lib/Models/AddProduct";
+import Review from "lib/Models/reviewModel";
+import { deleteImages } from "lib/cloudinary";
+import { isValidObjectId, rejectMethod, sendError } from "lib/http";
 
 export default async function handler(req, res) {
-  if (req.method !== "DELETE") {
-    return res.status(405).json({ message: "Method not allowed" });
+  if (rejectMethod(req, res, ["DELETE"])) return;
+
+  const { id } = req.query;
+  if (!isValidObjectId(id)) {
+    return res.status(400).json({ message: "Invalid product ID" });
   }
 
   try {
     await connectDb();
 
-    const { id } = req.query;
-    
-    if (!id) {
-      return res.status(400).json({ message: "Product ID is required" });
-    }
-
-    const product = await Product.findById(id);
-
+    const product = await Product.findById(id).lean();
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Delete associated reviews first
     await Review.deleteMany({ productId: id });
-
-    // Delete the product
     await Product.findByIdAndDelete(id);
 
-    return res.status(200).json({
-      message: "Product and associated reviews deleted successfully",
-      deletedProductId: id
-    });
+    // Clean up the product's images (best effort)
+    await deleteImages((product.productVariants || []).flatMap((variant) => variant.images || []));
 
+    return res.status(200).json({
+      message: "Product and its reviews were deleted",
+      deletedProductId: id,
+    });
   } catch (error) {
-    console.error("Error deleting product:", error);
-    return res.status(500).json({ message: error.message });
+    return sendError(res, error, "Failed to delete product");
   }
 }
