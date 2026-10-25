@@ -1,27 +1,31 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  trailingSlash: true,
+  // Lets a second build/dev server run alongside another one (e.g. NEXT_DIST_DIR=.next-verify)
+  distDir: process.env.NEXT_DIST_DIR || ".next",
+  poweredByHeader: false,
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
+    // Lint with `npm run lint`; don't block production builds on lint warnings.
     ignoreDuringBuilds: true,
   },
   images: {
-    unoptimized: true
+    unoptimized: true,
   },
   optimizeFonts: false,
-  i18n: {
-    locales: ['en', 'ar'],
-    defaultLocale: 'en',
+  async redirects() {
+    // "/" is the login page. Old template URLs keep working.
+    return [
+      { source: "/login", destination: "/", permanent: false },
+      { source: "/ecommerce/products", destination: "/products", permanent: false },
+      { source: "/ecommerce/Add-Products", destination: "/products/new", permanent: false },
+      { source: "/ecommerce/productDetails/:id", destination: "/products/:id", permanent: false },
+      { source: "/ecommerce/updateProduct/:id", destination: "/products/:id/edit", permanent: false },
+      { source: "/ecommerce/orders-list", destination: "/orders", permanent: false },
+      { source: "/ecommerce/orderDetails/:id", destination: "/orders/:id", permanent: false },
+      { source: "/ecommerce/email/inbox", destination: "/enquiries", permanent: false },
+      { source: "/ecommerce/email/read-email/:id", destination: "/enquiries/:id", permanent: false },
+    ];
   },
-  // images: {
-	// 	loader: "akamai",
-	// 	path:
-	// 		process.env.NODE_ENV === "production"
-	// 			? "https://admash-admin.envytheme.com/"
-	// 			: "http://localhost:3000",
-	// },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

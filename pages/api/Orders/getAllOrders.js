@@ -1,62 +1,58 @@
 import connectDb from "lib/database/db";
-import mongoose from "mongoose";
+import Checkout from "lib/Models/checkoutModel";
+import { ORDER_STATUSES } from "lib/orders";
+import { countByKey, escapeRegex, isValidObjectId, rejectMethod, sendError, toPositiveInt } from "lib/http";
 
 export default async function handler(req, res) {
-    if (req.method !== "GET") {
-        return res.status(405).json({ message: "Method not allowed" });
+  if (rejectMethod(req, res, ["GET"])) return;
+
+  const page = toPositiveInt(req.query.page, 1);
+  const limit = toPositiveInt(req.query.limit, 10, 100);
+  const status = typeof req.query.status === "string" ? req.query.status : req.query.search;
+  const searchQuery = typeof req.query.searchQuery === "string" ? req.query.searchQuery.trim() : "";
+
+  const filter = {};
+  if (ORDER_STATUSES.includes(status)) {
+    filter.orderStatus = status;
+  }
+
+  if (searchQuery) {
+    const orderId = searchQuery.replace(/^#?-?JVR-/i, "").trim();
+    if (isValidObjectId(orderId)) {
+      filter._id = orderId;
+    } else {
+      const regex = { $regex: escapeRegex(searchQuery), $options: "i" };
+      filter.$or = [
+        { "cartItems.productName": regex },
+        { "shippingAddress.fullName": regex },
+        { "shippingAddress.phone": regex },
+        { "paymentDetails.transactionId": regex },
+      ];
     }
+  }
 
-    try {
-        await connectDb();
-        const { page = 1, limit = 10, search, searchQuery } = req.query;
-        console.log("search query from backend: ", searchQuery);
-        
-        // Ensure model is correctly referenced
-        const Orders = mongoose.models.Checkout || mongoose.model("Checkout", new mongoose.Schema({}));
+  try {
+    await connectDb();
 
-        const filter = {};
-        const validStatus = ["Processing", "Packed", "Dispatched", "Delivered"];
-        
-        if (validStatus.includes(search)) {
-            filter.orderStatus = search;
-        }
-        
-        if (searchQuery) {
-            if (searchQuery.startsWith("#-JVR-")) {
-                const orderId = searchQuery.replace("#-JVR-", "").trim();
-                
-                if (mongoose.Types.ObjectId.isValid(orderId)) {
-                    filter._id = new mongoose.Types.ObjectId(orderId);
-                }
-            } else {
-                filter.$or = [
-                    { cartItems: { $elemMatch: { productName: { $regex: searchQuery, $options: "i" } } } }
-                ];
-            }
-        }
-        
-        const skip = (parseInt(page) - 1) * parseInt(limit);
-        const allOrders = await Orders.find(filter)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(parseInt(limit));
-            
-        const totalOrders = await Orders.countDocuments(filter);
-        const totalPages = Math.ceil(totalOrders / parseInt(limit));
-        
-        if (!allOrders || allOrders.length === 0) {
-            return res.status(404).json({ message: "Orders not found" });
-        }
+    const [orders, totalOrders, statusCounts] = await Promise.all([
+      Checkout.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Checkout.countDocuments(filter),
+      Checkout.aggregate([{ $group: { _id: "$orderStatus", count: { $sum: 1 } } }]),
+    ]);
 
-        return res.status(200).json({ 
-            orders: allOrders, 
-            totalPages, 
-            currentPage: parseInt(page),
-            totalOrders,
-            message: "Orders fetched successfully" 
-        });
-    } catch (error) {
-        console.error("Error fetching orders:", error);
-        return res.status(500).json({ message: error.message });
-    }
+    return res.status(200).json({
+      orders,
+      totalOrders,
+      totalPages: Math.ceil(totalOrders / limit),
+      currentPage: page,
+      statusCounts: countByKey(statusCounts),
+      message: "Orders fetched successfully",
+    });
+  } catch (error) {
+    return sendError(res, error, "Failed to load orders");
+  }
 }
