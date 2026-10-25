@@ -1,53 +1,34 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { baseApi } from "./baseApi";
 
-export const productsApi = createApi({
-  reducerPath: "productsApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "/api/",
-  }),
-  tagTypes: ["Product"],
+export const productsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    addProducts: builder.mutation({
-      query: (data) => ({
-        url: "Products/addProducts",
-        method: "POST",
-        body: data,
-      }),
-      invalidatesTags: ["Product"],
-    }),
     getAllProducts: builder.query({
       query: () => "Products/getAllProducts",
-      providesTags: ["Product"],
+      providesTags: (result) => [
+        { type: "Product", id: "LIST" },
+        ...(result?.products || []).map((product) => ({ type: "Product", id: product._id })),
+      ],
     }),
-    getProductById: builder.mutation({
-      query: (data) => ({
+    getProductById: builder.query({
+      query: (productId) => ({
         url: "Products/getProductsById",
         method: "POST",
-        body: data,
+        body: { productId },
       }),
-    }),
-    updateProduct: builder.mutation({
-      query: (data) => ({
-        url: "Products/updateProduct",
-        method: "PUT",
-        body: data,
-      }),
-      invalidatesTags: ["Product"],
+      providesTags: (result, error, productId) => [{ type: "Product", id: productId }],
     }),
     deleteProduct: builder.mutation({
       query: (id) => ({
         url: `Products/delete/${id}`,
         method: "DELETE",
       }),
-       invalidatesTags: ['Product'],
+      invalidatesTags: (result, error, id) => [
+        { type: "Product", id },
+        { type: "Product", id: "LIST" },
+        "Dashboard",
+      ],
     }),
   }),
 });
 
-export const {
-  useAddProductsMutation,
-  useGetAllProductsQuery,
-  useGetProductByIdMutation,
-  useUpdateProductMutation,
-  useDeleteProductMutation
-} = productsApi;
+export const { useGetAllProductsQuery, useGetProductByIdQuery, useDeleteProductMutation } = productsApi;

@@ -1,54 +1,26 @@
-import React from 'react';
-import { Typography } from "@mui/material";
-import Box from '@mui/material/Box';
-import Link from 'next/link';
-import Button from "@mui/material/Button";
+import React from "react";
+import Link from "next/link";
+import { Button, Card } from "@mui/material";
+import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
+import PageHeader from "@/components/common/PageHeader";
+import { EmptyState } from "@/components/common/States";
 
-export default function ErrorPage() {
+export default function NotFound() {
   return (
     <>
-      <Box
-        sx={{
-          textAlign: 'center',
-          padding: '150px 0'
-        }}
-      >
-        <img src='/images/error.png' alt='error' />
-
-        <Typography 
-          as="h1" 
-          sx={{
-            fontWeight: '500',
-            fontSize: '22px',
-            mt: '20px',
-            mb: '10px',
-          }}
-        >
-          Oops!! The page you are looking for doesn't exist!
-        </Typography>
-
-        <Typography>
-          The page you are looking for might have been removed had its name changed or is temporarily unavailable.
-        </Typography>
-        
-        <Link href="/" className="text-decoration-none">
-          <Button
-            type="submit"
-            variant="contained"
-            sx={{
-              mt: 3,
-              textTransform: "capitalize",
-              borderRadius: "8px",
-              fontWeight: "500",
-              fontSize: "13px",
-              padding: "12px 30px",
-              color: "#fff !important",
-            }}
-          >
-            Back To Home
-          </Button>
-        </Link>
-      </Box>
+      <PageHeader title="Page not found" />
+      <Card>
+        <EmptyState
+          icon={TravelExploreOutlinedIcon}
+          title="We couldn't find that page"
+          description="It may have been moved or deleted."
+          action={
+            <Button component={Link} href="/dashboard" variant="contained">
+              Back to dashboard
+            </Button>
+          }
+        />
+      </Card>
     </>
   );
 }

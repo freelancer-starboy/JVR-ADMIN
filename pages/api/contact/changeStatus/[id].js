@@ -1,49 +1,29 @@
 import connectDb from "lib/database/db";
-import mongoose from "mongoose";
+import Contact from "lib/Models/contactModel";
+import { isValidObjectId, rejectMethod, sendError } from "lib/http";
 
+// PUT /api/contact/changeStatus/:id            -> mark as read
+// PUT /api/contact/changeStatus/:id?read=false -> mark as unread
 export default async function handler(req, res) {
-  if (req.method !== "PUT") {
-    return res.status(405).json({ message: "Method not allowed" });
-  }
+  if (rejectMethod(req, res, ["PUT"])) return;
 
-  const { id } = req.query;
-  const Contact =
-    mongoose.models.Contact ||
-    new mongoose.model("Contact", new mongoose.Schema({}));
+  const { id, read } = req.query;
+  if (!isValidObjectId(id)) {
+    return res.status(400).json({ message: "Invalid enquiry ID" });
+  }
+  const isOpened = read !== "false";
 
   try {
     await connectDb();
-
-    // Find the contact by ID
-    const contact = await Contact.findById(id);
-    if (!contact) {
-      return res.status(404).json({ message: "Contact not found" });
+    const contactDetails = await Contact.findByIdAndUpdate(id, { $set: { isOpened } }, { new: true }).lean();
+    if (!contactDetails) {
+      return res.status(404).json({ message: "Enquiry not found" });
     }
-
-    // If isOpened is already true, no update is necessary
-    if (contact.isOpened === true) {
-      return res.status(200).json({
-        contactDetails: contact,
-        message: "No changes made, status is already opened.",
-      });
-    }
-
-    // Update isOpened to true
-    const response = await Contact.findByIdAndUpdate(
-      id,
-      { isOpened: true },
-      { new: true, strict: false } // 'new: true' to return the updated document
-    );
-
-    if (!response) {
-      return res.status(404).json({ message: "Status not changed" });
-    }
-
     return res.status(200).json({
-      contactDetails: response,
-      message: "Status changed successfully",
+      contactDetails,
+      message: isOpened ? "Marked as read" : "Marked as unread",
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return sendError(res, error, "Failed to update enquiry");
   }
 }

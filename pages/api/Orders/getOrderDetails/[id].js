@@ -1,24 +1,23 @@
 import connectDb from "lib/database/db";
-import mongoose from "mongoose";
+import Checkout from "lib/Models/checkoutModel";
+import { isValidObjectId, rejectMethod, sendError } from "lib/http";
 
-export default async function handler(req, res){
-    if( req.method !== "GET"){
-        return res.status(405).json({ message: "Method not allowed" });
+export default async function handler(req, res) {
+  if (rejectMethod(req, res, ["GET"])) return;
+
+  const { id } = req.query;
+  if (!isValidObjectId(id)) {
+    return res.status(400).json({ message: "Invalid order ID" });
+  }
+
+  try {
+    await connectDb();
+    const order = await Checkout.findById(id).lean();
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
     }
-    const { id } = req.query
-    
-    const Orders = mongoose.models.Checkout || new mongoose.model("Checkout", new mongoose.Schema({}));
-    
-
-    await connectDb()
-
-    try {
-        const response = await Orders.findById(id)
-        if(!response){
-            return res.status(404).json({ message : "Orders Not Found"})
-        }
-        return res.status(200).json({ order: response, message: "Order fetched successfully" })
-    } catch (error) {
-        return res.status(500).json({ message: error.message })
-    }
+    return res.status(200).json({ order, message: "Order fetched successfully" });
+  } catch (error) {
+    return sendError(res, error, "Failed to load order");
+  }
 }

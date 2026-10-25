@@ -1,74 +1,75 @@
-import React, { useState } from "react";
-import Head from "next/head";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import LeftSidebar from "@/components/_App/LeftSidebar";
-import TopNavbar from "@/components/_App/TopNavbar";
-import Footer from "@/components/_App/Footer";
-import ScrollToTop from "./ScrollToTop";
-import ControlPanelModal from "./ControlPanelModal";
+import { Box, LinearProgress, Typography } from "@mui/material";
+import Sidebar, { SIDEBAR_WIDTH } from "./Sidebar";
+import TopNavbar from "./TopNavbar";
 
 const Layout = ({ children }) => {
   const router = useRouter();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [navigating, setNavigating] = useState(false);
 
-  const [active, setActive] = useState(false);
-
-  const toogleActive = () => {
-    setActive(!active);
-  };
+  useEffect(() => {
+    const start = () => {
+      setMobileOpen(false);
+      setNavigating(true);
+    };
+    const done = () => setNavigating(false);
+    router.events.on("routeChangeStart", start);
+    router.events.on("routeChangeComplete", done);
+    router.events.on("routeChangeError", done);
+    return () => {
+      router.events.off("routeChangeStart", start);
+      router.events.off("routeChangeComplete", done);
+      router.events.off("routeChangeError", done);
+    };
+  }, [router.events]);
 
   return (
-    <>
-      <Head>
-        <title>
-          SRI JVR TEXTILES
-        </title>
-        <meta name="viewport" content="initial-scale=1.0, width=device-width" />
-      </Head>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
+      {navigating && (
+        <LinearProgress sx={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 2000, height: 3 }} />
+      )}
 
-      <div className={`main-wrapper-content ${active && "active"}`}>
-        {!(
-          router.pathname === "/authentication/sign-in" ||
-          router.pathname === "/authentication/sign-up" ||
-          router.pathname === "/authentication/forgot-password" ||
-          router.pathname === "/authentication/lock-screen" ||
-          router.pathname === "/authentication/confirm-mail" ||
-          router.pathname === "/authentication/logout"
-        ) && (
-          <>
-            <TopNavbar toogleActive={toogleActive} />
+      <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
-            <LeftSidebar toogleActive={toogleActive} />
-          </>
-        )}
+      <Box
+        sx={{
+          flexGrow: 1,
+          minWidth: 0,
+          display: "flex",
+          flexDirection: "column",
+          ml: { lg: `${SIDEBAR_WIDTH}px` },
+        }}
+      >
+        <TopNavbar onMenuClick={() => setMobileOpen(true)} />
 
-        <div className="main-content">
+        <Box
+          component="main"
+          key={router.pathname}
+          className="page-enter"
+          sx={{
+            flexGrow: 1,
+            width: "100%",
+            maxWidth: 1440,
+            mx: "auto",
+            px: { xs: 2, sm: 3, lg: 4 },
+            py: { xs: 2, sm: 3 },
+          }}
+        >
           {children}
+        </Box>
 
-          {!(
-            router.pathname === "/authentication/sign-in" ||
-            router.pathname === "/authentication/sign-up" ||
-            router.pathname === "/authentication/forgot-password" ||
-            router.pathname === "/authentication/lock-screen" ||
-            router.pathname === "/authentication/confirm-mail" ||
-            router.pathname === "/authentication/logout"
-          ) && <Footer />}
-        </div>
-      </div>
-            
-      {/* ScrollToTop */}
-      <ScrollToTop />
-      
-      {!(
-        router.pathname === "/authentication/sign-in" ||
-        router.pathname === "/authentication/sign-up" ||
-        router.pathname === "/authentication/forgot-password" ||
-        router.pathname === "/authentication/lock-screen" ||
-        router.pathname === "/authentication/confirm-mail" ||
-        router.pathname === "/authentication/logout"
-      ) &&
-        <ControlPanelModal />
-      }
-    </>
+        <Typography
+          component="footer"
+          variant="caption"
+          color="text.secondary"
+          sx={{ textAlign: "center", py: 2.5 }}
+        >
+          © {new Date().getFullYear()} SRI JVR TEXTILES · Admin
+        </Typography>
+      </Box>
+    </Box>
   );
 };
 

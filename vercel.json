@@ -1,9 +1,7 @@
 {
-    "build": {
-      "env": {
-        "NODE_ENV": "production"
-      }
-    },
-    "installCommand": "npm install sass --legacy-peer-deps && npm install --legacy-peer-deps"
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
   }
-  
+}
